@@ -22,7 +22,7 @@ use std::io::Write;
 use std::net::TcpStream;
 fn server() -> Result<(), Error> {
     let mut reconnect_flag = false;
-    let listener = std::net::TcpListener::bind("localhost:8000")?;
+    let listener = std::net::TcpListener::bind("0.0.0.0:8000")?;
     println!("Server listening on: http://{}", "0.0.0.0:8000");
 
     for stream in listener.incoming() {
@@ -44,7 +44,7 @@ fn server() -> Result<(), Error> {
         // find the start locaton of HTTP/1.1
         if buffer_tr == "shared key" {
             //stream.write(b"Connected. Please provide a path:")?;
-            let folders = read_files(r"c:\temp", None)?;
+            let folders = read_files(r"./", None)?;
             let mut data = serialize_folder(folders)?;
             println!("{}", data.len());
             stream.write_all(&mut data)?;
@@ -111,6 +111,10 @@ pub fn read_files(
         let entry: fs::DirEntry = entry?;
         let metadata = entry.metadata()?;
         if metadata.is_dir() {
+            // Hack to avoid .git files for now -----------------------
+            if entry.file_name() == std::ffi::OsStr::new(".git") || entry.file_name() == std::ffi::OsStr::new("target") {
+                continue;
+            }
             relative.push(entry.file_name());
             folder.add_sub_folder(read_files(entry.path(), Some(relative.clone()))?);
         } else {
