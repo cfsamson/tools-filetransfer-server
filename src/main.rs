@@ -111,7 +111,7 @@ pub fn read_files(
                 continue;
             }
             
-            relative.push(entry.file_name());
+            let relative = relative.join(entry.file_name());
             folder.add_sub_folder(read_files(entry.path(), Some(relative.clone()))?);
         } else {
             let file = File::new(entry)?;
