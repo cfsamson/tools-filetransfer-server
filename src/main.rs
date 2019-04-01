@@ -28,22 +28,17 @@ fn server() -> Result<(), Error> {
     for stream in listener.incoming() {
         let mut stream: TcpStream = stream?;
         stream.set_read_timeout(Some(std::time::Duration::from_secs(4)))?;
-
-        println!("Here");
         println!("{:?}", stream);
+
         // testing, just accept any
         let mut buffer = [0; 128];
         let b_count = stream.read(&mut buffer)?;
 
         let buffer = String::from_utf8_lossy(&buffer[0..b_count]);
         let buffer_tr = buffer;
-        println!("Here2");
-        println!("{:?}", buffer_tr);
 
-        // get the interesting part of the req
-        // find the start locaton of HTTP/1.1
         if buffer_tr == "shared key" {
-            //stream.write(b"Connected. Please provide a path:")?;
+            //stream.write(b"Connected. Please provide a path:")?; - messed up the response
             let folders = read_files(r"./", None)?;
             let mut data = serialize_folder(folders)?;
             println!("{}", data.len());
@@ -105,16 +100,17 @@ pub fn read_files(
         .to_string_lossy()
         .to_string();
     let mut folder = Folder::new(dir_name);
-    folder.path = dbg!(relative.clone());
+    folder.path = relative.clone();
 
     for entry in root {
         let entry: fs::DirEntry = entry?;
         let metadata = entry.metadata()?;
         if metadata.is_dir() {
-            // Hack to avoid .git files for now -----------------------
+            // Hack to avoid .git files and Cargo build directories for now -----------------------
             if entry.file_name() == std::ffi::OsStr::new(".git") || entry.file_name() == std::ffi::OsStr::new("target") {
                 continue;
             }
+            
             relative.push(entry.file_name());
             folder.add_sub_folder(read_files(entry.path(), Some(relative.clone()))?);
         } else {
